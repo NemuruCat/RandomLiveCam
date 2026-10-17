@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Live Camera Switcher</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        #player-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #ui-layer {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+        }
+
+        button#next-btn {
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background-color: rgba(220, 38, 38, 0.9);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+        }
+
+        button#next-btn:hover {
+            background-color: rgba(220, 38, 38, 1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 映像が表示される場所 -->
+    <div id="player-container"></div>
+
+    <!-- 操作ボタン -->
+    <div id="ui-layer">
+        <button id="next-btn">再生 / 次のカメラへ</button>
+    </div>
+
+    <script>
+        // 指定された新しいURLリスト（gDcfh-Wm0xE は除外済み）
+        const urls = [
+            "https://www.youtube.com/live/2PIdi3Xa7TY", "https://www.youtube.com/live/2f9NOSw-FqM", "https://www.youtube.com/live/uI8tWGe_FtA",
+            "https://www.youtube.com/live/qQoBmgDKZiI", "https://www.youtube.com/live/LRgGBlcL4KU", "https://www.youtube.com/live/dfVK7ld38Ys",
+            "https://www.youtube.com/live/8H3nRCFVR6Y", "https://www.youtube.com/live/u7kCTaCX_J4", "https://www.youtube.com/live/gFRtAAmiFbE",
+            "https://www.youtube.com/live/PFaytLiMc50", "https://www.youtube.com/live/JGvyEjmTi0Y", "https://www.youtube.com/live/99Hvm_d7qWY",
+            "https://www.youtube.com/live/i2PpmC1IeKk", "https://www.youtube.com/live/X304dz1zrfU", "https://www.youtube.com/live/cJd9IIu2vio",
+            "https://www.youtube.com/live/Gyn8efd2Jv8", "https://www.youtube.com/live/UXnBeU97BQk", "https://www.youtube.com/live/s--MDmshT3I",
+            "https://www.youtube.com/live/Mfq_QtuyrYI", "https://www.youtube.com/live/cT1TX3cMn8c", "https://www.youtube.com/live/JC0_aImeb6o",
+            "https://www.youtube.com/live/lPlBcj6yWpE", "https://www.youtube.com/live/hBaHx5WdnbQ", "https://www.youtube.com/live/PeElJClXtzE",
+            "https://www.youtube.com/live/uCbr0YLxsac", "https://www.youtube.com/live/niQh-vFZBs4", "https://www.youtube.com/live/cUnYPpK7ENk",
+            "https://www.youtube.com/live/J3xHBUgWRqc", "https://www.youtube.com/live/LHHXZdYmN_Y", "https://www.youtube.com/live/MwcMURMzJ7A",
+            "https://www.youtube.com/live/9YpQONYzX_A", "https://www.youtube.com/live/SLbSOmAazhg", "https://www.youtube.com/live/1oNQ9HoxAEE",
+            "https://www.youtube.com/live/GrEEoEmmrKs", "https://www.youtube.com/live/ybOa_LRzp_I", "https://www.youtube.com/live/oH7FEhwoOqQ",
+            "https://www.youtube.com/live/z1MErdsqsw8", "https://www.youtube.com/live/Q-R8BTtlWSY", "https://www.youtube.com/live/NzKVoh7ILBs",
+            "https://www.youtube.com/live/xPgeZzojY5o", "https://www.youtube.com/live/ywXRfMLuw78", "https://www.youtube.com/live/38br2iznW_s",
+            "https://www.youtube.com/live/WOrWnnJleA4", "https://www.youtube.com/live/JQ_jwk_7OVE", "https://www.youtube.com/live/VGnFLdQW39A",
+            "https://www.youtube.com/live/EO_1LWqsCNE", "https://www.youtube.com/live/V7_orOtu-oo", "https://www.youtube.com/live/cmkAbDUEoyA",
+            "https://www.youtube.com/live/m1R-LmvVt30", "https://www.youtube.com/live/97YNts0D2ak", "https://www.youtube.com/live/lcVm-Izrpa0",
+            "https://www.youtube.com/live/8Rw-tZTeBjU", "https://www.youtube.com/live/y5XS3fMISRk", "https://www.youtube.com/live/Kj5DjRYkzD8",
+            "https://www.youtube.com/live/O52zDyxg5QI", "https://www.youtube.com/live/IhGNK_hImLs", "https://www.youtube.com/live/7ecGJrsCv60",
+            "https://www.youtube.com/live/zMCea32gpmg", "https://www.youtube.com/live/YUP57y2iye8", "https://www.youtube.com/live/wDaV8EkYHmk",
+            "https://www.youtube.com/live/-xzg3wujOVM", "https://www.youtube.com/live/a1mcaV3Sf9U", "https://www.youtube.com/live/mt7uE-n0YPI",
+            "https://www.youtube.com/live/03pYP2Nmreo", "https://www.youtube.com/live/enYFXf8u7Lc", "https://www.youtube.com/live/QIt1FaDMnQc",
+            "https://www.youtube.com/live/iCxfe27HpaY", "https://www.youtube.com/live/Gd9d4q6WvUY", "https://www.youtube.com/live/1phWWCgzXgM",
+            "https://www.youtube.com/live/2tgHBRFHMm8", "https://www.youtube.com/live/5uZa3-RMFos", "https://www.youtube.com/live/qkSvU9j4kqM",
+            "https://www.youtube.com/live/2qj5fiaShzY", "https://www.youtube.com/live/L8i9G8jhWao", "https://www.youtube.com/live/XsOU8JnEpNM",
+            "https://www.youtube.com/live/xXZqU5vnEug", "https://www.youtube.com/live/qpukdDslCjk", "https://www.youtube.com/live/gdrNUUf-cQw",
+            "https://www.youtube.com/live/ydYDqZQpim8", "https://www.youtube.com/live/BsZEOvS3qTM", "https://www.youtube.com/live/SUXPnIEpbn4",
+            "https://www.youtube.com/live/DHUnz4dyb54", "https://www.youtube.com/live/HHp4rjhJsWI", "https://www.youtube.com/live/3e_uPkJCTNo",
+            "https://www.youtube.com/live/Tlc3uegvdrQ", "https://www.youtube.com/live/D0hiHTAbu2A", "https://www.youtube.com/live/5ZIw5x5jnQg",
+            "https://www.youtube.com/live/DjdUEyjx8GM", "https://www.youtube.com/live/kGG1CaeQ9oM", "https://www.youtube.com/live/lA6TaaMGgDo"
+        ];
+
+        // URLからIDだけを抽出（念のためパラメータ除去処理付き）
+        const videoIds = urls.map(url => {
+            let idPart = url.split('/').pop();
+            return idPart.split('?')[0];
+        });
+
+        let currentVideoId = '';
+        const container = document.getElementById('player-container');
+        const nextBtn = document.getElementById('next-btn');
+
+        // ランダムなIDを選ぶ関数
+        function getRandomVideoId() {
+            let newId = currentVideoId;
+            if (videoIds.length > 1) {
+                while (newId === currentVideoId) {
+                    newId = videoIds[Math.floor(Math.random() * videoIds.length)];
+                }
+            } else {
+                newId = videoIds[0];
+            }
+            return newId;
+        }
+
+        // 次の動画を読み込む関数
+        function loadNewVideo() {
+            nextBtn.textContent = '次のカメラへ';
+            currentVideoId = getRandomVideoId();
+
+            // ウェブサイト公開用により安全な youtube-nocookie.com を使用
+            container.innerHTML = `
+                <iframe 
+                    src="https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&mute=1&playsinline=1" 
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allow="autoplay; encrypted-media; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            `;
+        }
+
+        // ボタンのクリックイベント
+        nextBtn.addEventListener('click', loadNewVideo);
+
+    </script>
+</body>
+</html>
